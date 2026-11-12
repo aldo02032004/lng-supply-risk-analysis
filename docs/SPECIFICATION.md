@@ -74,13 +74,12 @@ Derived volume: `mmbtu = urea_cap × util × gas_per_ton` = 22.5 million MMBtu p
 
 ### 2.5 Optional
 
-`GOOGLE_API_KEY` from Colab Secrets or the environment, for Gemini recommendations.
+`GOOGLE_API_KEY` from Colab Secrets or the environment, for Gemini recommendations. Without it, the last saved answer in `data/rekomendasi.json` is used.
 
 ## 3. Method
 
-### 3.1 Returns and statistics
+### 3.1 Returns
 - Daily log return: `r_t = ln(P_t / P_{t-1})`.
-- Statistics per series: count, mean, std, min, 5th percentile, median, 95th percentile, max (in %).
 - Annual volatility: `std(r_daily) × √252`.
 
 ### 3.2 Monte Carlo simulation (`simulate`)
@@ -113,7 +112,7 @@ The same seed is used for every call, so "without hedge" and "with hedge" see id
 - **Previous period:** `simulate` and `metrics` are re-run on data up to the end of the previous month (`to_period("M")`; use `"Q"` for quarters).
 
 ### 3.5 Gemini recommendations
-All yellow and red risks are sent in one prompt. The model must return JSON `{"risk id": "recommendation"}`. Green risks and failed calls get "-".
+All yellow and red risks are sent in one prompt. The model must return JSON `{"risk id": "recommendation"}`. Green risks get "-". Each answer is saved to `data/rekomendasi.json`; when the call fails, that saved copy is used.
 
 ## 4. Status rules
 
@@ -132,11 +131,13 @@ Standard actions: green "accept, monitor routinely", yellow "monitor closely, pr
 
 | Section | Output |
 |---|---|
-| 6.1 | Text summary of all statuses; cost metrics table with a plain-language explanation per metric |
-| 6.2 | Full register sorted by score: likelihood, impact, last-month and current score, status, action, recommendation, owner, deadline |
-| 6.3 | Hedging comparison with % reduction; KRI table; BCMS table; change since last month |
-| 6.4 | Return statistics and correlation; price history chart (two y-axes); daily return distributions with best/worst day and volatility |
-| 6.5 | Dashboard: 5×5 risk matrix, 12-month cost distribution with mean/budget/VaR/CVaR, volatility KRI with P90 thresholds |
+| 6.1 | Slide `01_ringkasan`: four headline numbers (VaR 95, probability above budget, hedge effect, red risks) and four status cards (cost, two volatility KRIs, worst BCMS scenario) |
+| 6.2 | Cost table without vs with hedge (mean, VaR, CVaR, CaR, probability above budget) with a plain-language meaning per row; slide `02_biaya_hedging`: both cost distributions with budget, tolerance and VaR lines |
+| 6.3 | Full register sorted by score (score change, status, recommendation, owner, deadline); slide `03_register`: 5×5 risk matrix and score change per risk |
+| 6.4 | Table of changes since last month; slide `04_pemantauan`: 60-day volatility with P75/P90 thresholds and BCMS downtime vs RTO/MTPD |
+| 6.5 | Slide `05_data_pasar`: price history and daily return distributions with volatility, largest moves and correlation |
+
+Every slide is a 13.33 × 7.5 inch (16:9) figure whose title states the main message.
 
 ## 6. Checks
 
@@ -166,17 +167,19 @@ Code, comments and printed labels are in Indonesian. Main names:
 | `ret` | Daily log returns |
 | `reg` | Risk register |
 | `skor`, `skor_lalu` | Current and previous risk score |
-| `status`, `tindakan` | Status (HIJAU/KUNING/MERAH = green/yellow/red) and standard action |
+| `status` | Status (HIJAU/KUNING/MERAH = green/yellow/red) |
 | `rekomendasi`, `sumber_rek` | Mitigation recommendation and its source |
 | `owner`, `tenggat` | Risk owner and deadline |
-| `cost` | 10,000 simulated annual costs |
+| `cost`, `cost_h` | 10,000 simulated annual costs without and with hedge |
 | `m`, `m_hedge`, `m_lalu` | Cost metrics without hedge, with hedge, and for last month |
 | `batas`, `cost_status` | Cost tolerance limit and cost status |
 | `kri`, `vol60`, `q` | KRI table, 60-day volatility, P75/P90 thresholds |
 | `bcms` | Business continuity table |
 | `lalu` | Price data up to the end of last month |
 | `rkap` | Annual budget (Rencana Kerja dan Anggaran Perusahaan) |
-| `rp()`, `idn()` | Format numbers as IDR trillion and Indonesian notation |
+| `rp()`, `pct()`, `idn()`, `tgl()`, `bln()` | Format IDR trillion, percent, Indonesian number notation, and Indonesian dates |
+| `slide()`, `tampil()` | 16:9 chart canvas with message title; table with title and reading note |
+| `pendek()` | Short risk name (text before the first bracket or comma) |
 | `nama`, `warna` | Display names and colors per series |
 | Biaya, Rata-rata, Anggaran | Cost, average, budget |
 | Terburuk, Terbaik | Worst, best |
